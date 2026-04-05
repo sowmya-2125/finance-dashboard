@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>FinanceFlow • Intelligent Dashboard</title>
+  <!-- Google Fonts + simple reset -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <!-- Chart.js CDN v4 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Font Awesome 6 (free) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f5f7fc;
+      color: #0f172a;
+      padding: 28px 24px;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    /* DARK MODE */
+    body.dark {
+      background: #0b1120;
+      color: #eef2ff;
+    }
+
+    body.dark .card,
+    body.dark .chart-card,
+    body.dark .transaction-table,
+    body.dark .filter-bar,
+    body.dark .role-selector,
+    body.dark .insight-card,
+    body.dark .dark-mode-toggle {
+      background: #1e293b;
+      border-color: #334155;
+      color: #e2e8f0;
+    }
+
+    body.dark table th,
+    body.dark table td {
+      border-bottom-color: #334155;
+      color: #cbd5e6;
+    }
+
+    body.dark .btn-outline {
+      border-color: #475569;
+      color: #94a3b8;
+    }
+
+    body.dark .btn-outline:hover {
+      background: #334155;
+      color: white;
+    }
+
+    body.dark .badge-cat {
+      background: #2d3a5e;
+      color: #cbd5ff;
+    }
+
+    body.dark .role-badge {
+      background: #2d3a5e;
+      color: #a5f3fc;
+    }
+
+    .container {
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+
+    /* HEADER */
+    .header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      gap: 20px;
+    }
+
+    h1 {
+      font-weight: 800;
+      font-size: 1.9rem;
+      background: linear-gradient(135deg, #3b82f6, #0ea5e9);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: -0.02em;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .role-selector {
+      background: white;
+      padding: 6px 18px;
+      border-radius: 60px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border: 1px solid #e2edf2;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    }
+
+    .role-badge {
+      font-weight: 600;
+      font-size: 0.8rem;
+      background: #eef2ff;
+      padding: 5px 14px;
+      border-radius: 40px;
+      color: #1e40af;
+    }
+
+    select {
+      background: transparent;
+      border: 1px solid #cbd5e6;
+      padding: 6px 14px;
+      border-radius: 40px;
+      font-family: inherit;
+      font-weight: 500;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .dark-mode-toggle {
+      background: white;
+      border: 1px solid #e2edf2;
+      padding: 8px 18px;
+      border-radius: 40px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: 0.2s;
+      font-size: 0.9rem;
+    }
+
+    /* SUMMARY CARDS */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 22px;
+      margin-bottom: 36px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 32px;
+      padding: 22px 26px;
+      border: 1px solid #eef2fa;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.02);
+      transition: transform 0.1s;
+    }
+
+    .card-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #5b6e8c;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-amount {
+      font-size: 2.6rem;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    body.dark .card-amount {
+      color: #f8fafc;
+    }
+
+    .income { color: #10b981; }
+    .expense { color: #f97316; }
+
+    /* CHARTS ROW */
+    .charts-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 28px;
+      margin-bottom: 36px;
+    }
+
+    .chart-card {
+      flex: 1;
+      min-width: 280px;
+      background: white;
+      border-radius: 32px;
+      padding: 20px 22px;
+      border: 1px solid #eef2fa;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    }
+
+    .chart-card h3 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    canvas {
+      max-height: 240px;
+      width: 100%;
+    }
+
+    /* FILTER BAR */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+      padding: 12px 24px;
+      border-radius: 80px;
+      margin-bottom: 28px;
+      border: 1px solid #eef2fa;
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .filter-group input,
+    .filter-group select {
+      padding: 9px 18px;
+      border-radius: 48px;
+      border: 1px solid #cbd5e6;
+      font-family: inherit;
+      background: white;
+      font-size: 0.85rem;
+    }
+
+    .btn {
+      background: #3b82f6;
+      border: none;
+      padding: 9px 22px;
+      border-radius: 40px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid #3b82f6;
+      color: #3b82f6;
+    }
+
+    .btn-outline:hover {
+      background: #eff6ff;
+    }
+
+    /* TRANSACTIONS TABLE */
+    .transaction-table {
+      background: white;
+      border-radius: 32px;
+      overflow-x: auto;
+      border: 1px solid #eef2fa;
+      margin-bottom: 28px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      min-width: 620px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 16px 20px;
+      border-bottom: 1px solid #ecf3f9;
+    }
+
+    th {
+      font-weight: 700;
+      color: #334155;
+      background: #fafcff;
+    }
+
+    body.dark th {
+      background: #1e2a3a;
+      color: #cbd5ff;
+    }
+
+    .badge-cat {
+      background: #eef2ff;
+      padding: 4px 12px;
+      border-radius: 40px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .income-row .amount {
+      color: #10b981;
+      font-weight: 700;
+    }
+    .expense-row .amount {
+      color: #f97316;
+      font-weight: 700;
+    }
+
+    .action-icons i {
+      margin: 0 6px;
+      cursor: pointer;
+      font-size: 1.05rem;
+      transition: 0.1s;
+      opacity: 0.7;
+    }
+
+    .action-icons i:hover {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 52px 20px;
+      color: #7e8ba3;
+      font-style: italic;
+    }
+
+    /* INSIGHTS SECTION */
+    .insight-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 22px;
+      margin-top: 12px;
+      margin-bottom: 24px;
+    }
+
+    .insight-card {
+      background: white;
+      border-radius: 28px;
+      padding: 20px 24px;
+      flex: 1;
+      border: 1px solid #eef2fa;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+
+    footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 0.75rem;
+      opacity: 0.6;
+      border-top: 1px solid #e2edf2;
+      padding-top: 24px;
+    }
+
+    @media (max-width: 680px) {
+      body { padding: 18px; }
+      .card-amount { font-size: 1.9rem; }
+      .filter-bar { border-radius: 28px; }
+      .role-selector { padding: 4px 12px; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1><i class="fas fa-chart-pie" style="margin-right: 12px;"></i>FinanceFlow</h1>
+    <div class="toolbar">
+      <div class="role-selector">
+        <span class="role-badge"><i class="fas fa-shield-alt"></i> Role</span>
+        <select id="roleSelect">
+          <option value="admin">🛠️ Admin (full control)</option>
+          <option value="viewer">👁️ Viewer (read only)</option>
+        </select>
+      </div>
+      <button id="darkModeToggle" class="dark-mode-toggle"><i class="fas fa-moon"></i> Dark / Light</button>
+    </div>
+  </div>
+
+  <!-- Summary cards -->
+  <div class="summary-grid">
+    <div class="card"><div class="card-title"><i class="fas fa-coins"></i> Total Balance</div><div class="card-amount" id="totalBalance">$0</div></div>
+    <div class="card"><div class="card-title"><i class="fas fa-arrow-trend-up"></i> Income</div><div class="card-amount income" id="totalIncome">$0</div></div>
+    <div class="card"><div class="card-title"><i class="fas fa-arrow-trend-down"></i> Expenses</div><div class="card-amount expense" id="totalExpense">$0</div></div>
+  </div>
+
+  <!-- Visualizations row -->
+  <div class="charts-row">
+    <div class="chart-card"><h3><i class="fas fa-chart-line"></i> Balance trend (last 6 months)</h3><canvas id="trendChart" width="400" height="200"></canvas></div>
+    <div class="chart-card"><h3><i class="fas fa-chart-simple"></i> Spending by category</h3><canvas id="categoryChart" width="400" height="200"></canvas></div>
+  </div>
+
+  <!-- Filters and admin action -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <input type="text" id="searchInput" placeholder="🔍 Search description or category..." />
+      <select id="typeFilter">
+        <option value="all">All types</option>
+        <option value="income">Income only</option>
+        <option value="expense">Expense only</option>
+      </select>
+      <select id="categoryFilter">
+        <option value="all">All categories</option>
+        <option value="Food & Dining">🍕 Food & Dining</option>
+        <option value="Transport">🚗 Transport</option>
+        <option value="Shopping">🛍️ Shopping</option>
+        <option value="Bills">⚡ Bills</option>
+        <option value="Entertainment">🎬 Entertainment</option>
+        <option value="Salary">💰 Salary</option>
+        <option value="Freelance">💻 Freelance</option>
+      </select>
+    </div>
+    <div id="adminActions">
+      <button id="addTxBtn" class="btn"><i class="fas fa-plus-circle"></i> Add transaction</button>
+    </div>
+  </div>
+
+  <!-- Transactions table -->
+  <div class="transaction-table">
+    <table>
+      <thead>
+        <tr><th>Date</th><th>Description</th><th>Category</th><th>Type</th><th>Amount</th><th id="actionHeader">Actions</th></tr>
+      </thead>
+      <tbody id="transactionsBody">
+        <tr class="empty-state"><td colspan="6">Loading dashboard data...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Insights -->
+  <div class="insight-row">
+    <div class="insight-card"><i class="fas fa-fire-flame-curved"></i> <strong>🔥 Highest spending category:</strong> <span id="topCategory">—</span></div>
+    <div class="insight-card"><i class="fas fa-chart-column"></i> <strong>📆 Monthly expense change:</strong> <span id="monthlyCompare">—</span></div>
+    <div class="insight-card"><i class="fas fa-brain"></i> <strong>💡 Smart observation:</strong> <span id="smartInsight">—</span></div>
+  </div>
+  <footer>✨ Data persists in localStorage • Role-based UI • Admin can add/edit/delete • Viewer is read-only</footer>
+</div>
+
+<script>
+  // ---------- MOCK DATA (enriched) ----------
+  const DEFAULT_TRANSACTIONS = [
+    { id: "1", date: "2026-01-15", description: "Supermarket", category: "Food & Dining", type: "expense", amount: 245.50 },
+    { id: "2", date: "2026-01-20", description: "Monthly salary", category: "Salary", type: "income", amount: 4200.00 },
+    { id: "3", date: "2026-02-05", description: "Netflix & Spotify", category: "Entertainment", type: "expense", amount: 27.99 },
+    { id: "4", date: "2026-02-12", description: "Uber / taxi", category: "Transport", type: "expense", amount: 68.30 },
+    { id: "5", date: "2026-02-20", description: "Freelance UI work", category: "Freelance", type: "income", amount: 850.00 },
+    { id: "6", date: "2026-03-03", description: "Electricity bill", category: "Bills", type: "expense", amount: 112.40 },
+    { id: "7", date: "2026-03-16", description: "Noise cancelling headphones", category: "Shopping", type: "expense", amount: 199.99 },
+    { id: "8", date: "2026-03-25", description: "Salary March", category: "Salary", type: "income", amount: 4200.00 },
+    { id: "9", date: "2026-04-02", description: "Dinner with friends", category: "Food & Dining", type: "expense", amount: 89.90 },
+    { id: "10", date: "2026-04-10", description: "Gym annual fee", category: "Entertainment", type: "expense", amount: 45.00 },
+    { id: "11", date: "2026-04-18", description: "Performance bonus", category: "Salary", type: "income", amount: 600.00 },
+    { id: "12", date: "2026-05-05", description: "Internet + Mobile", category: "Bills", type: "expense", amount: 79.99 },
+    { id: "13", date: "2026-05-14", description: "Zara shopping", category: "Shopping", type: "expense", amount: 120.50 },
+    { id: "14", date: "2026-05-28", description: "Salary May", category: "Salary", type: "income", amount: 4200.00 },
+    { id: "15", date: "2026-06-07", description: "Cinema & popcorn", category: "Entertainment", type: "expense", amount: 35.20 },
+    { id: "16", date: "2026-06-18", description: "Fuel / gas", category: "Transport", type: "expense", amount: 55.00 },
+    { id: "17", date: "2026-06-24", description: "Freelance dev", category: "Freelance", type: "income", amount: 1200.00 }
+  ];
+
+  // ---------- GLOBAL STATE ----------
+  let transactions = [];
+  let currentRole = "admin";        // admin | viewer
+  let filters = {
+    search: "",
+    type: "all",
+    category: "all"
+  };
+
+  // chart references
+  let trendChart = null;
+  let categoryChart = null;
+
+  // ---------- PERSISTENCE ----------
+  function loadPersistedData() {
+    const storedTx = localStorage.getItem("finance_transactions");
+    if (storedTx) {
+      transactions = JSON.parse(storedTx);
+    } else {
+      transactions = JSON.parse(JSON.stringify(DEFAULT_TRANSACTIONS));
+    }
+    const savedRole = localStorage.getItem("finance_role");
+    if (savedRole === "admin" || savedRole === "viewer") currentRole = savedRole;
+    else currentRole = "admin";
+    document.getElementById("roleSelect").value = currentRole;
+  }
+
+  function persistTransactions() {
+    localStorage.setItem("finance_transactions", JSON.stringify(transactions));
+  }
+
+  function persistRole() {
+    localStorage.setItem("finance_role", currentRole);
+  }
+
+  // ---------- HELPER: SUMMARY ----------
+  function updateSummary() {
+    const totalInc = transactions.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0);
+    const totalExp = transactions.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+    const balance = totalInc - totalExp;
+    document.getElementById("totalBalance").innerText = `$${balance.toFixed(2)}`;
+    document.getElementById("totalIncome").innerText = `$${totalInc.toFixed(2)}`;
+    document.getElementById("totalExpense").innerText = `$${totalExp.toFixed(2)}`;
+  }
+
+  // monthly balance trend (cumulative last 6 months: Jan-Jun)
+  function getMonthlyTrend() {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+    const monthlyNet = [0, 0, 0, 0, 0, 0];
+    transactions.forEach(t => {
+      const d = new Date(t.date);
+      const monthIdx = d.getMonth(); // 0=Jan ... 5=Jun
+      if (monthIdx >= 0 && monthIdx <= 5) {
+        const delta = t.type === "income" ? t.amount : -t.amount;
+        monthlyNet[monthIdx] += delta;
+      }
+    });
+    let cumulative = 0;
+    const balances = monthlyNet.map(net => { cumulative += net; return cumulative; });
+    return { labels: months, data: balances };
+  }
+
+  // expense by category (for doughnut)
+  function getCategorySpending() {
+    const map = new Map();
+    transactions.filter(t => t.type === "expense").forEach(t => {
+      map.set(t.category, (map.get(t.category) || 0) + t.amount);
+    });
+    const sorted = Array.from(map.entries()).sort((a,b) => b[1] - a[1]);
+    return { labels: sorted.map(v => v[0]), data: sorted.map(v => v[1]) };
+  }
+
+  function updateCharts() {
+    const trend = getMonthlyTrend();
+    if (trendChart) trendChart.destroy();
+    const ctxTrend = document.getElementById("trendChart").getContext("2d");
+    trendChart = new Chart(ctxTrend, {
+      type: 'line',
+      data: { labels: trend.labels, datasets: [{ label: 'Balance ($)', data: trend.data, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.05)', fill: true, tension: 0.2, pointBackgroundColor: '#1e40af' }] },
+      options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'top' } } }
+    });
+
+    const spend = getCategorySpending();
+    if (categoryChart) categoryChart.destroy();
+    const ctxCat = document.getElementById("categoryChart").getContext("2d");
+    categoryChart = new Chart(ctxCat, {
+      type: 'doughnut',
+      data: { labels: spend.labels, datasets: [{ data: spend.data, backgroundColor: ['#3b82f6', '#f97316', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#ec489a'], borderWidth: 0 }] },
+      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+
+  // filter logic
+  function getFilteredTransactions() {
+    let filtered = [...transactions];
+    if (filters.search.trim()) {
+      const term = filters.search.toLowerCase();
+      filtered = filtered.filter(t => t.description.toLowerCase().includes(term) || t.category.toLowerCase().includes(term));
+    }
+    if (filters.type !== "all") filtered = filtered.filter(t => t.type === filters.type);
+    if (filters.category !== "all") filtered = filtered.filter(t => t.category === filters.category);
+    filtered.sort((a,b) => new Date(b.date) - new Date(a.date));
+    return filtered;
+  }
+
+  function renderTransactionsTable() {
+    const filtered = getFilteredTransactions();
+    const tbody = document.getElementById("transactionsBody");
+    const isAdmin = currentRole === "admin";
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr class="empty-state"><td colspan="6">📭 No transactions match filters. Add a new one or reset search.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = filtered.map(tx => `
+      <tr class="${tx.type}-row">
+        <td>${tx.date}</td>
+        <td><strong>${escapeHtml(tx.description)}</strong></td>
+        <td><span class="badge-cat">${escapeHtml(tx.category)}</span></td>
+        <td>${tx.type === "income" ? '<span style="color:#10b981;"><i class="fas fa-arrow-up"></i> Income</span>' : '<span style="color:#f97316;"><i class="fas fa-arrow-down"></i> Expense</span>'}</td>
+        <td class="amount">${tx.type === "income" ? '+' : '-'}$${Math.abs(tx.amount).toFixed(2)}</td>
+        <td class="action-icons">${isAdmin ? `<i class="fas fa-pen" data-id="${tx.id}" data-action="edit"></i> <i class="fas fa-trash-can" data-id="${tx.id}" data-action="delete"></i>` : '<span class="badge-cat">🔒 view only</span>'}</td>
+      </tr>
+    `).join('');
+
+    if (isAdmin) {
+      document.querySelectorAll('.action-icons i').forEach(icon => {
+        icon.addEventListener('click', (e) => {
+          const id = icon.getAttribute('data-id');
+          const action = icon.getAttribute('data-action');
+          if (action === 'delete') deleteTransactionById(id);
+          else if (action === 'edit') editTransactionById(id);
+        });
+      });
+    }
+  }
+
+  function escapeHtml(str) { return str.replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+
+  // CRUD admin actions
+  function deleteTransactionById(id) {
+    if (currentRole !== "admin") { alert("Viewer cannot delete transactions."); return; }
+    if (confirm("Delete this transaction permanently?")) {
+      transactions = transactions.filter(t => t.id !== id);
+      persistTransactions();
+      fullRefresh();
+    }
+  }
+
+  function editTransactionById(id) {
+    if (currentRole !== "admin") { alert("Viewer cannot edit."); return; }
+    const tx = transactions.find(t => t.id === id);
+    if (!tx) return;
+    const newDesc = prompt("Edit description", tx.description);
+    if (newDesc && newDesc.trim()) tx.description = newDesc.trim();
+    let newAmount = parseFloat(prompt("Edit amount (positive number)", tx.amount));
+    if (!isNaN(newAmount) && newAmount > 0) tx.amount = newAmount;
+    const newCat = prompt("Edit category (Food & Dining, Transport, Shopping, Bills, Entertainment, Salary, Freelance)", tx.category);
+    if (newCat && newCat.trim()) tx.category = newCat.trim();
+    const newType = prompt("Edit type (income / expense)", tx.type);
+    if (newType === "income" || newType === "expense") tx.type = newType;
+    persistTransactions();
+    fullRefresh();
+  }
+
+  function addNewTransaction() {
+    if (currentRole !== "admin") { alert("Admin role required to add transactions. Switch role from dropdown."); return; }
+    const date = prompt("Date (YYYY-MM-DD):", new Date().toISOString().slice(0,10));
+    if (!date) return;
+    const desc = prompt("Description:");
+    if (!desc) return;
+    const category = prompt("Category (Food & Dining, Transport, Shopping, Bills, Entertainment, Salary, Freelance):", "Food & Dining");
+    const type = prompt("Type (income / expense):", "expense");
+    if (type !== "income" && type !== "expense") { alert("Type must be income or expense"); return; }
+    const amount = parseFloat(prompt("Amount (positive number):"));
+    if (isNaN(amount) || amount <= 0) { alert("Valid amount required"); return; }
+    const newId = Date.now().toString();
+    transactions.push({ id: newId, date, description: desc, category, type, amount });
+    persistTransactions();
+    fullRefresh();
+  }
+
+  // INSIGHTS: highest spending category, monthly comparison, smart insight
+  function computeInsights() {
+    const expenses = transactions.filter(t => t.type === "expense");
+    const catMap = new Map();
+    expenses.forEach(e => catMap.set(e.category, (catMap.get(e.category) || 0) + e.amount));
+    let topCat = "—", maxSpend = 0;
+    for (let [cat, val] of catMap.entries()) {
+      if (val > maxSpend) { maxSpend = val; topCat = cat; }
+    }
+    document.getElementById("topCategory").innerHTML = topCat !== "—" ? `${topCat} ($${maxSpend.toFixed(2)})` : "No expense data";
+
+    // monthly comparison (last month vs previous month)
+    const now = new Date();
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+    const lastMonthExp = expenses.filter(t => {
+      const d = new Date(t.date);
+      return d.getMonth() === lastMonth.getMonth() && d.getFullYear() === lastMonth.getFullYear();
+    }).reduce((s,e) => s + e.amount, 0);
+    const prevMonthExp = expenses.filter(t => {
+      const d = new Date(t.date);
+      return d.getMonth() === prevMonth.getMonth() && d.getFullYear() === prevMonth.getFullYear();
+    }).reduce((s,e) => s + e.amount, 0);
+    let compareMsg = "Insufficient data";
+    if (lastMonthExp > 0 || prevMonthExp > 0) {
+      const diff = lastMonthExp - prevMonthExp;
+      const percent = prevMonthExp ? ((diff / prevMonthExp) * 100).toFixed(1) : "∞";
+      compareMsg = `Last month: $${lastMonthExp.toFixed(2)} vs Prev: $${prevMonthExp.toFixed(2)} (${diff > 0 ? '+' : ''}${diff.toFixed(2)}, ${percent}%)`;
+    }
+    document.getElementById("monthlyCompare").innerText = compareMsg;
+
+    const totalIncome = transactions.filter(t=>t.type==="income").reduce((a,b)=>a+b.amount,0);
+    const totalExpenses = expenses.reduce((a,b)=>a+b.amount,0);
+    let insight = `Savings rate: ${totalIncome ? ((totalIncome - totalExpenses)/totalIncome*100).toFixed(1) : 0}% | `;
+    if (topCat === "Food & Dining") insight += "🍽️ Dining out is top expense → cook at home to save.";
+    else if (topCat === "Entertainment") insight += "🎬 Entertainment is high → look for subscriptions to trim.";
+    else if (topCat === "Shopping") insight += "🛍️ Shopping spree detected → try 24h rule before buying.";
+    else insight += "✅ Great balance! Keep tracking to stay ahead.";
+    document.getElementById("smartInsight").innerText = insight;
+  }
+
+  // role UI: hide/show add button & action column
+  function applyRoleUI() {
+    const isAdmin = currentRole === "admin";
+    const addBtnContainer = document.getElementById("adminActions");
+    if (addBtnContainer) addBtnContainer.style.display = isAdmin ? "block" : "none";
+    const actionHeader = document.getElementById("actionHeader");
+    if (actionHeader) actionHeader.style.display = isAdmin ? "table-cell" : "none";
+    renderTransactionsTable();  // re-render action icons accordingly
+  }
+
+  function fullRefresh() {
+    updateSummary();
+    updateCharts();
+    renderTransactionsTable();
+    computeInsights();
+  }
+
+  // ---------- EVENT LISTENERS ----------
+  function bindEvents() {
+    document.getElementById("roleSelect").addEventListener("change", (e) => {
+      currentRole = e.target.value;
+      persistRole();
+      applyRoleUI();
+      fullRefresh();
+    });
+
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      filters.search = e.target.value;
+      renderTransactionsTable();
+      computeInsights();
+    });
+    document.getElementById("typeFilter").addEventListener("change", (e) => {
+      filters.type = e.target.value;
+      renderTransactionsTable();
+      computeInsights();
+    });
+    document.getElementById("categoryFilter").addEventListener("change", (e) => {
+      filters.category = e.target.value;
+      renderTransactionsTable();
+      computeInsights();
+    });
+    document.getElementById("addTxBtn").addEventListener("click", addNewTransaction);
+
+    // dark mode
+    const darkToggleBtn = document.getElementById("darkModeToggle");
+    darkToggleBtn.addEventListener("click", () => {
+      document.body.classList.toggle("dark");
+      localStorage.setItem("finance_dark", document.body.classList.contains("dark"));
+    });
+    const savedDark = localStorage.getItem("finance_dark");
+    if (savedDark === "true") document.body.classList.add("dark");
+  }
+
+  // ---------- INITIALIZE ----------
+  function init() {
+    loadPersistedData();
+    bindEvents();
+    applyRoleUI();
+    fullRefresh();
+  }
+
+  init();
+</script>
+</body>
+</html>
