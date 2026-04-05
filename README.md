@@ -1,7 +1,7 @@
 # FinanceFlow - Intelligent Finance Dashboard
 
 ## 📌 Live Demo
-[Insert your Vercel/Netlify URL here]
+https://vercel.com/sowmya-2125s-projects/finance-dashboard
 
 ## 📋 Overview
 FinanceFlow is a fully responsive finance dashboard that helps users track income, expenses, and spending patterns. It features role-based UI (Admin/Viewer), interactive charts, transaction management, and persistent storage.
